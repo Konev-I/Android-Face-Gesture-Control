@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Application</string>
+    <string name="accessibility_service_label">Приложение для управления устройством жестами головы.</string>
+    <string name="accessibility_service_description">Для приложения управления устройством жестами головы требуется доступ к специальным возможностям для работы.</string>
+</resources>
