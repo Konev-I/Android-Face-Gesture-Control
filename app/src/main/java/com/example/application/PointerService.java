@@ -38,7 +38,6 @@ public class PointerService extends Service implements CameraBridgeViewBase.CvCa
     private int statusBarOffSet;
     public CameraBridgeViewBase.CvCameraViewListener2 a;
     private CameraBridgeViewBase mOpenCvCameraView;
-    WindowManager.LayoutParams params;
 
     @Nullable
     @Override
@@ -75,16 +74,15 @@ public class PointerService extends Service implements CameraBridgeViewBase.CvCa
             Log.i(TAG, "OFFSET " + statusBarOffSet);
         }
 
-        WindowManager.LayoutParams a = new WindowManager.LayoutParams(
+        WindowManager.LayoutParams params = new WindowManager.LayoutParams(
                 WindowManager.LayoutParams.MATCH_PARENT,
                 WindowManager.LayoutParams.MATCH_PARENT,
                 WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
                 WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE,
                 PixelFormat.TRANSPARENT);
-        a.height = 1;
-        a.width = 1;
-
-        windowManager.addView(cameraView, a);
+        params.height = 1;
+        params.width = 1;
+        windowManager.addView(cameraView, params);
 
         params = new WindowManager.LayoutParams(
                 WindowManager.LayoutParams.MATCH_PARENT,
@@ -134,24 +132,6 @@ public class PointerService extends Service implements CameraBridgeViewBase.CvCa
         params1.bottomToBottom = ConstraintSet.PARENT_ID;
         params1.leftToRight = buttonReset.getId();
         buttonsView.addView(buttonExit, params1);
-
-        /*
-        buttonTap.setText("Tap");
-        buttonTap.setOnClickListener(view ->
-        {
-            int tapX = pointer.getPosX();
-            int tapY = pointer.getPosY() + statusBarOffSet;
-            tapService.makeTap(tapX, tapY);
-
-            Log.i(TAG, "X tap " + tapX);
-            Log.i(TAG, "Y tap " + tapY);
-        });
-        params1 = new ConstraintLayout.LayoutParams(ConstraintLayout.LayoutParams.WRAP_CONTENT, ConstraintLayout.LayoutParams.WRAP_CONTENT);
-        params1.bottomToBottom = ConstraintSet.PARENT_ID;
-        params1.leftToRight = buttonReset.getId();
-        buttonsView.addView(buttonTap, params1);
-        */
-
         pointer.bringToFront();
 
         mOpenCvCameraView = cameraView;
