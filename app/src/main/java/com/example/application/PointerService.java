@@ -23,6 +23,7 @@ import org.opencv.android.JavaCameraView;
 import org.opencv.android.OpenCVLoader;
 import org.opencv.core.Mat;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 
@@ -36,7 +37,6 @@ public class PointerService extends Service implements CameraBridgeViewBase.CvCa
     public static int width;
     public static int height;
     private int statusBarOffSet;
-    public CameraBridgeViewBase.CvCameraViewListener2 a;
     private CameraBridgeViewBase mOpenCvCameraView;
 
     @Nullable
@@ -90,7 +90,12 @@ public class PointerService extends Service implements CameraBridgeViewBase.CvCa
                 WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
                 WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE,
                 PixelFormat.TRANSLUCENT);
-        pointer = new Pointer(getApplicationContext(), width, height);
+        try {
+            pointer = new Pointer(getApplicationContext(), width, height);
+        } catch (IOException e) {
+            (Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG)).show();
+            return;
+        }
         windowManager.addView(pointer, params);
 
         buttonsView = new ConstraintLayout(getApplicationContext());
@@ -183,9 +188,7 @@ public class PointerService extends Service implements CameraBridgeViewBase.CvCa
 
     @Override
     public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
-//        return pointer.faceDetection(inputFrame);
-
-        pointer.faceDetection(inputFrame);
+        pointer.actionByFrame(inputFrame);
         return null;
     }
 }

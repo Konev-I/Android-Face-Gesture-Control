@@ -2,7 +2,6 @@ package com.example.application;
 
 import static android.content.ContentValues.TAG;
 
-import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
@@ -14,7 +13,6 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.FrameLayout;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.constraintlayout.widget.ConstraintLayout;
@@ -26,13 +24,8 @@ import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.android.CameraBridgeViewBase.CvCameraViewListener2;
 import org.opencv.android.OpenCVLoader;
 import org.opencv.core.Mat;
-import org.opencv.core.Point;
-import org.opencv.objdetect.CascadeClassifier;
 
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Collections;
 import java.util.List;
 
@@ -41,11 +34,7 @@ public class MainActivity extends CameraActivity implements CvCameraViewListener
     private static final int OVERLAY_PERMISSION_CODE = 5463;
     private static boolean allPermissions;
     private CameraBridgeViewBase mOpenCvCameraView;
-    private CascadeClassifier detector;
     private Pointer pointerView;
-    private String fileNameFace = "haarcascade_frontalface_alt.xml";
-    private String fileNameEyes = "haarcascade_eye_tree_eyeglasses.xml";
-
 
     public MainActivity() {
         Log.i(TAG, "Instantiated new " + this.getClass());
@@ -98,24 +87,6 @@ public class MainActivity extends CameraActivity implements CvCameraViewListener
             (Toast.makeText(this, "OpenCV initialization failed!", Toast.LENGTH_LONG)).show();
             return;
         }
-        writeFileToPrivateStorage(R.raw.haarcascade_frontalface_alt, fileNameFace);
-        writeFileToPrivateStorage(R.raw.haarcascade_eye_tree_eyeglasses, fileNameEyes);
-
-        detector = new CascadeClassifier();
-        if (!detector.load(getApplicationContext().getFilesDir().getPath() + "/" + fileNameFace)) {
-            Log.e(TAG, "Face detector initialization failed!");
-            (Toast.makeText(this, "Face detector initialization failed!", Toast.LENGTH_LONG)).show();
-            return;
-        }
-        Pointer.faceDetector = detector;
-
-        detector = new CascadeClassifier();
-        if (!detector.load(getApplicationContext().getFilesDir().getPath() + "/" + fileNameEyes)) {
-            Log.e(TAG, "Eyes detector initialization failed!");
-            (Toast.makeText(this, "Eyes detector initialization failed!", Toast.LENGTH_LONG)).show();
-            return;
-        }
-        Pointer.eyesDetector = detector;
 
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         setContentView(R.layout.activity_main);
@@ -123,6 +94,13 @@ public class MainActivity extends CameraActivity implements CvCameraViewListener
         mOpenCvCameraView = findViewById(R.id.app_camera_view);
         mOpenCvCameraView.setVisibility(SurfaceView.VISIBLE);
         mOpenCvCameraView.setCvCameraViewListener(this);
+
+        try {
+            pointerView = new Pointer(getApplicationContext(), PointerService.width, PointerService.height);
+        } catch (IOException e) {
+            (Toast.makeText(this, e.getMessage(), Toast.LENGTH_LONG)).show();
+            return;
+        }
 
         this.runOnUiThread(() -> {
             Button buttonResetFace = new Button(getApplicationContext());
@@ -195,7 +173,6 @@ public class MainActivity extends CameraActivity implements CvCameraViewListener
                     FrameLayout.LayoutParams.MATCH_PARENT,
                     FrameLayout.LayoutParams.MATCH_PARENT
             );
-            pointerView = new Pointer(getApplicationContext(), PointerService.width, PointerService.height);
             frameLayout.addView(pointerView, frameParams);
         });
         allPermissions = true;
@@ -225,7 +202,6 @@ public class MainActivity extends CameraActivity implements CvCameraViewListener
 
     @Override
     protected List<? extends CameraBridgeViewBase> getCameraViewList() {
-//        return null;
         return Collections.singletonList(mOpenCvCameraView);
     }
 
@@ -247,32 +223,6 @@ public class MainActivity extends CameraActivity implements CvCameraViewListener
 
     @Override
     public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
-        return pointerView.faceDetection(inputFrame);
-//        pointerView.faceDetection(inputFrame);
-//        return null;
-    }
-
-    public void writeFileToPrivateStorage(int fromFile, String toFile)
-    {
-        InputStream is = getApplicationContext().getResources().openRawResource(fromFile);
-        int bytes_read;
-        byte[] buffer = new byte[4096];
-        try
-        {
-            FileOutputStream fos = getApplicationContext().openFileOutput(toFile, Context.MODE_PRIVATE);
-
-            while ((bytes_read = is.read(buffer)) != -1)
-                fos.write(buffer, 0, bytes_read);
-            fos.close();
-            is.close();
-        }
-        catch (FileNotFoundException e)
-        {
-            (Toast.makeText(this, "Cascade file not found!", Toast.LENGTH_LONG)).show();
-        }
-        catch (IOException e)
-        {
-            (Toast.makeText(this, "Failed to read cascade file!", Toast.LENGTH_LONG)).show();
-        }
+        return pointerView.actionByFrame(inputFrame);
     }
 }

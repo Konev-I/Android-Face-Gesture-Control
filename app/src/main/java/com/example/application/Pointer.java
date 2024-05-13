@@ -2,7 +2,6 @@ package com.example.application;
 
 import static org.opencv.imgproc.Imgproc.ellipse;
 import static org.opencv.imgproc.Imgproc.rectangle;
-import static org.opencv.objdetect.Objdetect.CASCADE_SCALE_IMAGE;
 
 import android.content.Context;
 import android.graphics.Canvas;
@@ -16,13 +15,13 @@ import androidx.annotation.NonNull;
 import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
-import org.opencv.core.MatOfRect;
 import org.opencv.core.Point;
 import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
 import org.opencv.core.Size;
-import org.opencv.objdetect.CascadeClassifier;
 
+import java.io.IOException;
+import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -41,20 +40,20 @@ public class Pointer extends View {
 
     public boolean isCenterSet;
     public Rect rectCenter;
-    public static CascadeClassifier faceDetector;
-    public static CascadeClassifier eyesDetector;
+
     private final Paint RED = new Paint();
     private final Paint GREEN = new Paint();
     private final Paint WHITE = new Paint();
+    private ObjectDetection detector;
 
-    public Pointer(Context context, int width, int height)
-    {
+    public Pointer(Context context, int width, int height) throws IOException {
         super(context);
         RED.setColor(Color.RED);
         GREEN.setColor(Color.GREEN);
         WHITE.setColor(Color.WHITE);
         posX = width / 2;
         posY = height / 2;
+        detector = new ObjectDetection(context);
     }
 
     public void setFaceCenter(Point p, Size size) {
@@ -66,38 +65,30 @@ public class Pointer extends View {
         }
     }
 
-    public Mat faceDetection(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
-//    public void faceDetection(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
+    public Mat actionByFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
         Mat frame = new Mat();
+        Mat grayFrame = inputFrame.gray();
+        Core.rotate(grayFrame, grayFrame, Core.ROTATE_90_COUNTERCLOCKWISE);
         Core.rotate(inputFrame.rgba(), frame, Core.ROTATE_90_COUNTERCLOCKWISE);
-        MatOfRect faces = new MatOfRect();
-        Mat frame_gray = inputFrame.gray();
 
-        Core.rotate(frame_gray, frame_gray, Core.ROTATE_90_COUNTERCLOCKWISE);
-        faceDetector.detectMultiScale( frame_gray, faces, 1.1, 2, CASCADE_SCALE_IMAGE, new Size(30, 30));
-        for (Rect face: faces.toArray())
-        {
-            Point center = new Point( face.x + (double) face.width /2, face.y + (double) face.height /2 );
-            ellipse( frame, center, new Size( (double) face.width /2, (double) face.height /2 ), 0, 0, 360, new Scalar( 255, 0, 255 ), 4, 8, 0 );
-            ellipse( frame, center, new Size( 1, 1), 0, 0, 360, new Scalar( 255, 255, 255 ), 3, 8, 0 );
+        Rect face = detector.faceDetection(grayFrame);
+
+        if (face != null) {
+            List<Rect> eyes = detector.eyesDetection(face, grayFrame);
+
+            Point center = new Point(face.x + (double) face.width / 2, face.y + (double) face.height / 2);
+            ellipse(frame, center, new Size((double) face.width / 2, (double) face.height / 2), 0, 0, 360, new Scalar(255, 0, 255), 4, 8, 0);
+            ellipse(frame, center, new Size(1, 1), 0, 0, 360, new Scalar(255, 255, 255), 3, 8, 0);
             this.setFaceCenter(center, new Size(radiusFaceRect, radiusFaceRect));
-            rectangle(frame, this.rectCenter, new Scalar( 255, 255, 255 ));
-
-            MatOfRect eyes = new MatOfRect();
-            eyesDetector.detectMultiScale(frame_gray.submat(face), eyes);
-            Rect[] eyesRect = eyes.toArray();
-            for (int i = 0; i < (Math.min(eyesRect.length, 2)); i++)
-            {
-                eyesRect[i].x = (int) (face.x + eyesRect[i].x);
-                eyesRect[i].y = (int) (face.y + eyesRect[i].y);
-                rectangle(frame, eyesRect[i], new Scalar( 255, 0, 0 ));
-            }
-
-            if (eyesRect.length >= 2) {
-                eyesCalculation(eyesRect[0], eyesRect[1]);
-            }
-
+            rectangle(frame, this.rectCenter, new Scalar(255, 255, 255));
             this.movePointer(center);
+
+            if (!eyes.isEmpty()) {
+                eyesAction(eyes);
+                for(Rect eye: eyes) {
+                    rectangle(frame, eye, new Scalar(255, 0, 0));
+                }
+            }
         }
 
         Core.rotate(frame, frame, Core.ROTATE_90_CLOCKWISE);
@@ -136,26 +127,17 @@ public class Pointer extends View {
         this.post(this::invalidate);
     }
 
-    public void eyesCalculation(Rect eye0, Rect eye1) {
-        Rect eyeL;
-        Rect eyeR;
-        if (eye0.x > eye1.x) {
-            eyeL = eye0;
-            eyeR = eye1;
-        }
-        else {
-            eyeL = eye1;
-            eyeR = eye0;
-        }
+    public void eyesAction(List<Rect> eyes) {
+        Rect eyeL = eyes.get(0);
+        Rect eyeR = eyes.get(1);
 
         Point centerL = new Point(eyeL.x + (double) eyeL.width / 2, eyeL.y + (double) eyeL.height / 2);
         Point centerR = new Point(eyeR.x + (double) eyeR.width / 2, eyeR.y + (double) eyeR.height / 2);
 
-
-        if (!wasTap && (centerL.y - centerR.y > (double) eyeL.height / 2)) {
+        if (!wasTap && (centerL.y - centerR.y > (double) (eyeL.height / 3))) {
             tap();
         }
-        else if (!wasSwipe && (centerR.y - centerL.y > (double) eyeR.height / 2)){
+        else if (!wasSwipe && (centerR.y - centerL.y > (double) (eyeR.height / 3))){
             if (swipePosX == -100) {
                 swipePosX = getPosX();
                 swipePosY = getPosY();
@@ -164,7 +146,6 @@ public class Pointer extends View {
                 swipe();
             }
         }
-
     }
 
     public void tap() {
@@ -175,7 +156,7 @@ public class Pointer extends View {
                 public void run() {
                     wasTap = false;
                 }
-            }, 2000);
+            }, 2500);
         }
         else {
             (Toast.makeText(getContext(), "Нет доступа к специальным возможностям", Toast.LENGTH_LONG)).show();
@@ -192,7 +173,7 @@ public class Pointer extends View {
                 public void run() {
                     wasSwipe = false;
                 }
-            }, 2000);
+            }, 2500);
         }
         else {
             (Toast.makeText(getContext(), "Нет доступа к специальным возможностям", Toast.LENGTH_LONG)).show();
