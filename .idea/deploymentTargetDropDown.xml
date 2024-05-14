@@ -2,6 +2,18 @@
 <project version="4">
   <component name="deploymentTargetDropDown">
     <value>
+      <entry key="TestNegativeObjectDetectionEyes">
+        <State />
+      </entry>
+      <entry key="TestNegativeObjectDetectionEyesPos">
+        <State />
+      </entry>
+      <entry key="TestObjectDetectionEyesPosLeftFirst">
+        <State />
+      </entry>
+      <entry key="TestObjectDetectionEyesPosRightFirst">
+        <State />
+      </entry>
       <entry key="app">
         <State />
       </entry>

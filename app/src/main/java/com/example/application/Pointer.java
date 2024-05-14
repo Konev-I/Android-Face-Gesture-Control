@@ -26,6 +26,8 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 public class Pointer extends View {
+    private int screenWidth;
+    private int screenHeight;
     private int speed = 15;
     private int radius = 10;
     private static int radiusFaceRect = 50;
@@ -51,6 +53,8 @@ public class Pointer extends View {
         RED.setColor(Color.RED);
         GREEN.setColor(Color.GREEN);
         WHITE.setColor(Color.WHITE);
+        screenHeight = height;
+        screenWidth = width;
         posX = width / 2;
         posY = height / 2;
         detector = new ObjectDetection(context);
@@ -58,6 +62,32 @@ public class Pointer extends View {
 
     public void setFaceCenter(Point p, Size size) {
         if (!isCenterSet) {
+            if (p.x < 0) {
+                p.x = 0;
+            }
+            else if (p.x > screenWidth) {
+                p.x = screenWidth;
+            }
+            if (p.y < 0) {
+                p.y = 0;
+            }
+            else if (p.y > screenHeight) {
+                p.y = screenHeight;
+            }
+
+            if (size.width < 0) {
+                size.width = 0;
+            }
+            else if (size.width > screenWidth) {
+                size.width = screenWidth;
+            }
+            if (size.height < 0) {
+                size.height = 0;
+            }
+            else if (size.height > screenHeight) {
+                size.height = screenHeight;
+            }
+
             Point p1 = new Point(p.x - size.width / 2, p.y - size.height / 2);
             Point p2 = new Point(p.x + size.width / 2, p.y + size.height / 2);
             rectCenter = new Rect(p1, p2);
@@ -106,13 +136,13 @@ public class Pointer extends View {
             }
 
             if (point.x < rectCenter.x) {
-                if (!(posX >= getWidth())) {
+                if (!(posX >= screenWidth)) {
                     posX += speed;
                 }
             }
 
             if (point.y > rectCenter.y + rectCenter.height) {
-                if (!(posY >= getHeight())) {
+                if (!(posY >= screenHeight)) {
                     posY += speed;
                 }
             }
@@ -178,7 +208,6 @@ public class Pointer extends View {
         else {
             (Toast.makeText(getContext(), "Нет доступа к специальным возможностям", Toast.LENGTH_LONG)).show();
         }
-
     }
 
     protected void onDraw(@NonNull Canvas canvas)
@@ -197,7 +226,7 @@ public class Pointer extends View {
     }
 
     public void setSpeed(int speed) {
-        if (!(speed == 0)) {
+        if (!(speed <= 0)) {
             this.speed = speed;
         }
     }
@@ -207,8 +236,8 @@ public class Pointer extends View {
     }
 
     public void setRadius(int radius) {
-        if (!(radius <= 0 ) && !((radius >= getWidth()) || (radius >= getHeight())) ) {
-            this.radiusFaceRect = radius;
+        if (!(radius <= 0 ) && !((radius >= screenWidth) || (radius >= screenHeight)) ) {
+            radiusFaceRect = radius;
             isCenterSet = false;
         }
     }

@@ -99,6 +99,10 @@ public class ObjectDetection {
     }
 
     public List<Rect> eyesPos(Rect eye0, Rect eye1) {
+        if (eye0 == null || eye1 == null) {
+            return emptyList();
+        }
+
         List<Rect> eyes = new ArrayList<>(2);
         if (eye0.x > eye1.x) {
             eyes.add(eye0);
