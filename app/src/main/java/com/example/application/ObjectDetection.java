@@ -51,6 +51,10 @@ public class ObjectDetection {
     }
 
     public Rect faceDetection(Mat grayFrame) {
+        if (grayFrame == null) {
+            return null;
+        }
+
         MatOfRect faces = new MatOfRect();
         faceDetector.detectMultiScale( grayFrame, faces, 1.1, 2, CASCADE_SCALE_IMAGE, new Size(30, 30));
 
@@ -64,6 +68,10 @@ public class ObjectDetection {
     }
 
     public List<Rect> eyesDetection(Rect face, Mat grayFrame) {
+        if (grayFrame == null || face == null) {
+            return emptyList();
+        }
+
         List<Rect> eyesReturn;
         MatOfRect eyes = new MatOfRect();
         eyesDetector.detectMultiScale(grayFrame.submat(face), eyes);

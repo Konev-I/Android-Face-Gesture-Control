@@ -96,6 +96,10 @@ public class Pointer extends View {
     }
 
     public Mat actionByFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
+        if (inputFrame == null) {
+            return null;
+        }
+
         Mat frame = new Mat();
         Mat grayFrame = inputFrame.gray();
         Core.rotate(grayFrame, grayFrame, Core.ROTATE_90_COUNTERCLOCKWISE);
@@ -158,6 +162,10 @@ public class Pointer extends View {
     }
 
     public void eyesAction(List<Rect> eyes) {
+        if (eyes == null || eyes.size() != 2) {
+            return;
+        }
+
         Rect eyeL = eyes.get(0);
         Rect eyeR = eyes.get(1);
 

@@ -43,13 +43,13 @@ public class TapService extends AccessibilityService {
             @Override
             public void onCompleted(GestureDescription gestureDescription) {
                 super.onCompleted(gestureDescription);
-                Log.i(TAG, "Tap was made");
+                Log.i(TAG, "Swipe was made");
             }
 
             @Override
             public void onCancelled(GestureDescription gestureDescription) {
                 super.onCancelled(gestureDescription);
-                Log.e(TAG, "Can't make tap!");
+                Log.e(TAG, "Can't make swipe!");
             }
         }, null);
     }
